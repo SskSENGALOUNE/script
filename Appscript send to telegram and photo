@@ -1,0 +1,57 @@
+
+  function getImgURL(path) {
+  let arrpath = path.split("/");
+  let foldername = arrpath[0];
+  let filename = arrpath[1];
+  
+  let folders = DriveApp.getFoldersByName(foldername);
+  if (!folders.hasNext()) {
+    Logger.log("ไม่พบโฟลเดอร์: " + foldername);
+    return null;  // ไม่พบโฟลเดอร์
+  }
+
+  let folder = folders.next();
+  let files = folder.getFilesByName(filename);
+
+  if (!files.hasNext()) {
+    Logger.log("ไม่พบไฟล์: " + filename);
+    return null;  // ไม่พบไฟล์
+  }
+
+  let fileId = files.next().getId();
+  let fileURL = "https://lh3.googleusercontent.com/d/" + fileId;
+  return fileURL;
+}
+
+function telegramNoti(msg, img) {
+  let token = "XXXXXCXXXXXXXXXXX"; // แทนที่ด้วย Token ของบอท Telegram ของคุณ
+  let chatId = "XXXXXXXXXXXXXXXXXXXX"; // แทนที่ด้วย Chat ID ของห้องแชทที่คุณต้องการส่งข้อความ
+
+  let url = "https://api.telegram.org/bot" + token;
+  let text = encodeURIComponent(msg);
+
+  let options = {
+    "method": "post",
+    "muteHttpExceptions": true
+  };
+
+  if (img) {
+    // ส่งภาพพร้อมข้อความ
+    let photoUrl = img;
+    UrlFetchApp.fetch(url + "/sendPhoto?chat_id=" + chatId + "&photo=" + photoUrl + "&caption=" + text, options);
+  } else {
+    // ส่งเฉพาะข้อความ
+    UrlFetchApp.fetch(url + "/sendMessage?chat_id=" + chatId + "&text=" + text, options);
+  }
+}
+
+function alert(content, imagePath) {
+  let imageURL = getImgURL(imagePath);
+
+  // ถ้า imageURL เป็น null (ไม่พบภาพ) ก็ส่งแค่ข้อความ
+  if (imageURL) {
+    telegramNoti(content, imageURL);  // ส่งข้อความพร้อมภาพ
+  } else {
+    telegramNoti(content, null);  // ส่งแค่ข้อความ
+  }
+}
